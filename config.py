@@ -10,15 +10,6 @@ from typing import Optional
 class Config:
     """配置类"""
     def __init__(self, config_file: str):
-        self.qywechat_key: str = ""
-        self.redis_server: str = "127.0.0.1"
-        self.redis_port: str = "6379"
-        self.redis_password: str = ""
-        self.log_file_dir: str = ""
-        self.log_file_path: str = "alertmanager-webhook.log"
-        self.port: str = "9095"
-        self.host: str = "127.0.0.1"
-        
         self._load_config(config_file)
     
     def _load_config(self, config_file: str):
