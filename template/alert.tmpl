@@ -1,0 +1,17 @@
+{% if alert.status == 'firing' %}
+告警主题: {{ alert.annotations.get('summary', '') }}
+告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '' }}
+告警级别: {{ alert.labels.get('serverity') or alert.labels.get('severity') or '' }}
+告警次数: {{ alert.count }}
+影响实例: {{ alert.labels.get('instance', '') }}
+告警详情: {{ alert.annotations.get('description', '') }}
+触发时间: {{ alert.startTime }}
+
+{% elif alert.status == 'resolved' %}
+告警主题: {{ alert.annotations.get('summary', '') }}
+告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '' }}
+影响实例: {{ alert.labels.get('instance', '') }}
+开始时间: {{ alert.startTime }}
+恢复时间: {{ alert.endTime }}
+{% endif %}
+
