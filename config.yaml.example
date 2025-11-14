@@ -1,6 +1,6 @@
 # 企业微信机器人key
-# 使用企业微信时必须配置，不使用则留空
-# 获取方式：在企业微信群中添加机器人，获取webhook地址中的key参数
+# 配置企业微信的key，如不配置也可以在请求接口的时候通过   ?key=xxxx  来拼接
+
 qywechatKey: your_webhook_key_here
 
 # Redis配置
