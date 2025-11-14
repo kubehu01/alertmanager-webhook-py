@@ -65,7 +65,7 @@ receivers:
 receivers:
   - name: 'default-receiver'
     webhook_configs:
-      - url: 'http://127.0.0.1:9095/qywechat?key=0a8a0d1a-8287-490f-85dd-4e144fe7cedc'
+      - url: 'http://127.0.0.1:9095/qywechat?key=xxx'
         send_resolved: true
 ```
 
@@ -94,7 +94,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
       "fingerprint": "02f13394997e5211"
     }
   ]
-}' http://127.0.0.1:9095/qywechat
+}' http://127.0.0.1:9095/qywechat?key=xxxx
 ```
 
 ## 自定义模板
