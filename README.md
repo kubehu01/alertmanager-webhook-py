@@ -21,7 +21,7 @@ pip install -r requirements.txt
 编辑 `config.yaml` 配置文件：
 
 ```yaml
-# 企业微信机器人key（必须配置）
+# 企业微信机器人key
 qywechatKey: your_webhook_key_here
 
 # Redis配置
