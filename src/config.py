@@ -3,8 +3,6 @@
 """
 import os
 import yaml
-from pathlib import Path
-from typing import Optional
 
 
 class Config:
@@ -25,10 +23,12 @@ class Config:
         
         # 读取配置项
         self.qywechat_key = config_data.get("qywechatKey", "")
+        # webhook基础URL（可选，不配置则使用默认官方地址）
+        self.webhook_base_url = config_data.get("webhookBaseUrl", "https://qyapi.weixin.qq.com/cgi-bin/webhook/send")
         self.redis_server = config_data.get("redisServer", "127.0.0.1")
         self.redis_port = config_data.get("redisPort", "6379")
         self.redis_password = config_data.get("redisPassword", "")
-        self.log_file_dir = config_data.get("logFileDir", "")
+        self.log_file_dir = config_data.get("logFileDir", "logs")
         self.log_file_path = config_data.get("logFilePath", "alertmanager-webhook.log")
         self.port = config_data.get("port", "9095")
         self.host = config_data.get("host", "127.0.0.1")

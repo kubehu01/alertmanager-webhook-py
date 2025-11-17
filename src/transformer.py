@@ -1,7 +1,6 @@
 """
 消息转换器：将Alertmanager通知转换为企业微信消息格式
 """
-import json
 import redis
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple
@@ -67,7 +66,7 @@ class Transformer:
         # 处理模板路径
         template_path = self.template_path
         if not os.path.isabs(template_path):
-            # 相对路径，尝试从程序目录查找
+            # 相对路径，从项目根目录查找
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             template_path = os.path.join(base_dir, template_path)
         
@@ -79,15 +78,17 @@ class Transformer:
             logger.warning(f"模板文件不存在: {template_path}，使用默认模板")
             # 返回默认模板
             default_template = """{% if alert.status == 'firing' %}
-告警主题: {{ alert.annotations.get('summary', '') }}
-告警级别: {{ alert.labels.get('serverity') or alert.labels.get('sereverity') or '' }}
+**<font color="orange">告警主题: {{ alert.annotations.get('summary', '') }}</font>**
+告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '默认项目' }}
+告警级别: {{ alert.labels.get('serverity') or alert.labels.get('severity') or '' }}
 告警次数: {{ alert.count }}
-告警主机: {{ alert.labels.get('instance', '') }}
 告警详情: {{ alert.annotations.get('description', '') }}
 触发时间: {{ alert.startTime }}
+
 {% elif alert.status == 'resolved' %}
-告警主题: {{ alert.annotations.get('summary', '') }}
-告警主机: {{ alert.labels.get('instance', '') }}
+**<font color="green">告警主题: {{ alert.annotations.get('summary', '') }}</font>**
+告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '默认项目' }}
+告警详情: {{ alert.annotations.get('description', '') }}
 开始时间: {{ alert.startTime }}
 恢复时间: {{ alert.endTime }}
 {% endif %}"""

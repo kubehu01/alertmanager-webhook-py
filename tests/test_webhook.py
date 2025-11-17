@@ -4,12 +4,11 @@
 测试脚本：模拟Alertmanager发送告警通知
 """
 import requests
-import json
 from datetime import datetime, timezone
 
 def test_firing_alert():
     """测试触发告警"""
-    url = "http://127.0.0.1:9095/qywechat?key=2a07a707-af1b-4223-af6e-b2fbbfb8c3c1"
+    url = "http://127.0.0.1:9095/qywechat?key=xxxx"
     
     data = {
         "alerts": [
@@ -38,7 +37,7 @@ def test_firing_alert():
 
 def test_resolved_alert():
     """测试告警恢复"""
-    url = "http://127.0.0.1:9095/qywechat?key=2a07a707-af1b-4223-af6e-b2fbbfb8c3c1"
+    url = "http://127.0.0.1:9095/qywechat?key=xxxx"
     
     data = {
         "alerts": [

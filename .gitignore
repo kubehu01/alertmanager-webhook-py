@@ -25,6 +25,11 @@ wheels/
 
 # 日志文件
 *.log
+logs/
+!logs/.gitkeep
+
+# PID文件
+*.pid
 
 # IDE
 .vscode/
@@ -35,4 +40,5 @@ wheels/
 
 # 配置文件（包含敏感信息）
 config.yaml
+config/config.yaml
 
