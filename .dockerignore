@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志和PID文件
+*.log
+*.pid
+logs/*.log
+
+# 配置文件（敏感信息，通过volume挂载）
+config/config.yaml
+
+# 测试文件
+tests/
+*.sh
+
+# 文档
+README.md
+*.md
+
+# 其他
+.DS_Store
+
+

@@ -15,9 +15,48 @@
 
 ## 安装依赖
 
+### 方式一：直接安装（本地运行）
+
 ```bash
 pip install -r requirements.txt
 ```
+
+### 方式二：Docker 部署（推荐）
+
+使用 Docker Compose 一键部署，包含 Redis 服务：
+
+```bash
+# 1. 复制配置文件
+cp config/config.yaml.example config/config.yaml
+
+# 2. 编辑配置文件，设置企业微信key等参数
+# 注意：Redis配置中的 redisServer 应改为 redis（docker-compose中的服务名）
+# 编辑 config/config.yaml，修改以下配置：
+#   - qywechatKey: 你的企业微信机器人key
+#   - redisServer: redis  # 改为redis（docker-compose服务名）
+
+# 3. 启动服务
+docker-compose up -d
+
+# 4. 查看日志
+docker-compose logs -f webhook
+
+# 5. 查看服务状态
+docker-compose ps
+
+# 6. 停止服务
+docker-compose down
+
+# 7. 重启服务
+docker-compose restart webhook
+```
+
+**Docker 配置说明**：
+- 配置文件路径：`config/config.yaml`（需要从 `config/config.yaml.example` 复制并修改）
+- Redis 服务名：在配置文件中，`redisServer` 应设置为 `redis`（docker-compose 中的服务名）
+- 日志文件：挂载到 `./logs` 目录
+- 端口映射：`9095:9095`（Webhook服务）、`6379:6379`（Redis服务）
+- 数据持久化：Redis 数据保存在 Docker volume `redis-data` 中
 
 ## 配置说明
 
@@ -33,7 +72,7 @@ qywechatKey: your_webhook_key_here
 webhookBaseUrl: https://qyapi.weixin.qq.com/cgi-bin/webhook/send
 
 # Redis配置
-redisServer: 127.0.0.1
+redisServer: 127.0.0.1  # Docker部署时改为 redis
 redisPort: 6379
 redisPassword:  # 如果Redis设置了密码，请填写
 
@@ -50,15 +89,38 @@ host: 0.0.0.0
 
 ### 1. 启动服务
 
+**方式一：Docker Compose（推荐，包含 Redis）**
+
 ```bash
-# 方式一：使用服务管理脚本（推荐，Linux/Mac）
+# 启动所有服务（包括Redis）
+docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f webhook
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart webhook
+```
+
+**方式二：使用服务管理脚本（Linux/Mac）**
+
+```bash
 bash service.sh start        # 启动服务
 bash service.sh stop         # 停止服务
 bash service.sh restart      # 重启服务
 bash service.sh status       # 查看服务状态
 bash service.sh help         # 查看帮助信息
+```
 
-# 方式二：直接使用Python
+**方式三：直接使用Python**
+
+```bash
 python src/app.py                          # 使用默认配置文件路径
 python src/app.py -c config/config.yaml    # 指定配置文件路径
 ```
@@ -173,17 +235,23 @@ alertmanager-webhook-python/
 │   ├── test_webhook.py # Python测试脚本
 │   └── test_webhook.sh # Shell测试脚本
 ├── requirements.txt    # 依赖包
-├── service.sh           # 服务管理脚本（支持start/stop/restart/status）
+├── Dockerfile          # Docker镜像构建文件
+├── docker-compose.yml  # Docker Compose编排文件
+├── .dockerignore       # Docker构建忽略文件
+├── service.sh          # 服务管理脚本（支持start/stop/restart/status）
 └── README.md           # 说明文档
 ```
 
 ## 注意事项
 
-1. 需要先启动Redis服务
+1. **Redis服务**：
+   - Docker部署：Redis会自动启动，配置文件中 `redisServer` 应设置为 `redis`
+   - 本地部署：需要先启动Redis服务，配置文件中 `redisServer` 设置为 `127.0.0.1`
 2. 确保企业微信机器人webhook key配置正确
 3. 配置文件需要放在 `config/` 目录下，或通过 `-c` 参数指定路径
 4. 模板文件位于 `template/` 目录下
 5. 日志文件默认写入 `logs/` 目录，程序会自动创建该目录
+6. **Docker部署**：需要先创建 `config/config.yaml` 配置文件（从 `config/config.yaml.example` 复制）
 
 ## 健康检查
 
@@ -218,4 +286,5 @@ bash tests/test_webhook.sh your_key_here resolved
 # 查看帮助信息
 bash tests/test_webhook.sh --help
 ```
+
 

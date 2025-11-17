@@ -132,8 +132,11 @@ def qywechat_webhook():
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康检查接口"""
-    return jsonify({"status": "ok"}), 200
-
+    from datetime import datetime
+    return jsonify({
+        "status": "ok",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }), 200
 
 def main():
     """主函数"""

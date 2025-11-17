@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Alertmanager Webhook 服务
+  webhook:
+    build: .
+    # image: registry.cn-hangzhou.aliyuncs.com/syncimage2aliyun/alertmanager-qywxwebhook:v1.0
+    # 如不愿自行build也可以将image注释取消使用已有镜像
+    container_name: alertmanager-webhook
+    restart: unless-stopped
+    ports:
+      - "9095:9095"
+    volumes:
+      # 挂载配置文件（需要先创建 config/config.yaml）
+      - ./config/config.yaml:/app/config/config.yaml:ro
+      # 挂载日志目录
+      - ./logs:/app/logs
+    environment:
+      # 可以通过环境变量覆盖配置（可选）
+      - TZ=Asia/Shanghai
+    depends_on:
+      - redis
+  # Redis 服务
+  redis:
+    image: redis:7.2.11-alpine
+    container_name: alertmanager-webhook-redis
+    restart: unless-stopped
+    ports: 
+      - "6379:6379"
+    volumes:
+      # Redis 数据持久化
+      - ./redis-data:/data
+    command: redis-server  --requirepass mypasswd
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
