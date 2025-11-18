@@ -54,3 +54,63 @@ class QyWeChatMarkdown:
             "markdown": self.markdown
         }
 
+
+@dataclass
+class FeishuMarkdown:
+    """飞书Markdown消息格式"""
+    msg_type: str = "interactive"
+    card: Dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if not self.card:
+            self.card = {
+                "config": {
+                    "wide_screen_mode": True
+                },
+                "elements": []
+            }
+
+    def set_content(self, content: str):
+        """设置Markdown内容"""
+        self.card["elements"] = [
+            {
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": content
+                }
+            }
+        ]
+
+    def to_dict(self) -> dict:
+        """转换为字典格式"""
+        return {
+            "msg_type": self.msg_type,
+            "card": self.card
+        }
+
+
+@dataclass
+class DingTalkMarkdown:
+    """钉钉Markdown消息格式"""
+    msgtype: str = "markdown"
+    markdown: Dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if not self.markdown:
+            self.markdown = {
+                "title": "告警通知",
+                "text": ""
+            }
+
+    def set_content(self, content: str, title: str = "告警通知"):
+        """设置Markdown内容"""
+        self.markdown["title"] = title
+        self.markdown["text"] = content
+
+    def to_dict(self) -> dict:
+        """转换为字典格式"""
+        return {
+            "msgtype": self.msgtype,
+            "markdown": self.markdown
+        }

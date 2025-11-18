@@ -42,3 +42,5 @@ logs/
 config.yaml
 config/config.yaml
 
+# 临时文件
+*.zip

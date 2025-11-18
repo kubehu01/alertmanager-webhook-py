@@ -15,25 +15,24 @@ services:
       - ./config/config.yaml:/app/config/config.yaml:ro
       # 挂载日志目录
       - ./logs:/app/logs
-    environment:
-      # 可以通过环境变量覆盖配置（可选）
-      - TZ=Asia/Shanghai
-    depends_on:
-      - redis
-  # Redis 服务
+      - /etc/localtime:/etc/localtime:ro
+
+  # Redis 服务,如使用sqlite可以删除下面部分
   redis:
     image: redis:7.2.11-alpine
     container_name: alertmanager-webhook-redis
     restart: unless-stopped
-    ports: 
+    ports:
       - "6379:6379"
     volumes:
       # Redis 数据持久化
       - ./redis-data:/data
-    command: redis-server  --requirepass mypasswd
+      - /etc/localtime:/etc/localtime:ro
+    command: redis-server --appendonly yes --requirepass redis@fn2022!
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
+

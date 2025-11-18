@@ -1,17 +1,47 @@
-# 企业微信机器人key
-# 配置企业微信的key，如不配置也可以在请求接口的时候通过   ?key=xxxx  来拼接
+# 企业微信机器人配置（可选）
+# 配置企业微信的key，如不配置也可以在请求接口的时候通过 ?key=xxxx 来指定
 qywechatKey: your_webhook_key_here
 
 # Webhook基础URL（可选）
 # 不配置则使用默认官方地址: https://qyapi.weixin.qq.com/cgi-bin/webhook/send
 # 如果使用正向代理，可以配置代理地址，例如: https://proxy.example.com:58443/cgi-bin/webhook/send
-# 注意：只需要配置基础URL部分，key会通过?key=xxx参数自动拼接
-webhookBaseUrl: https://qyapi.weixin.qq.com/cgi-bin/webhook/send
+qywechatBaseUrl: https://qyapi.weixin.qq.com/cgi-bin/webhook/send
 
-# Redis配置
-redisServer: 127.0.0.1  # 必须配置
-redisPort: 6379  # 可选项，为空默认为6379
-redisPassword:  # redis未设置密码则留空，如果设置了密码登陆则必须配置
+# 飞书机器人配置（可选）
+# 配置飞书的token，如不配置也可以在请求接口的时候通过 ?key=xxxx 来指定
+feishuKey: your_webhook_token_here
+
+# Webhook基础URL（可选）
+# 不配置则使用默认官方地址: https://open.feishu.cn/open-apis/bot/v2/hook
+# 如果使用正向代理，可以配置代理地址，例如: https://proxy.example.com:58443/open-apis/bot/v2/hook
+feishuBaseUrl: https://open.feishu.cn/open-apis/bot/v2/hook
+
+# 钉钉机器人配置（可选）
+# 配置钉钉的access_token，如不配置也可以在请求接口的时候通过 ?key=xxxx 来指定
+dingtalkKey: your_access_token_here
+
+# Webhook基础URL（可选）
+# 不配置则使用默认官方地址: https://oapi.dingtalk.com/robot/send
+# 如果使用正向代理，可以配置代理地址，例如: https://proxy.example.com:58443/robot/send
+dingtalkBaseUrl: https://oapi.dingtalk.com/robot/send
+
+# 存储配置
+useStorage: sqlite  # 存储类型，支持 "redis" 或 "sqlite"，默认为 "sqlite"
+
+# Redis配置（当 useStorage=redis 时生效）
+redisServer: redis  # Redis 服务器地址
+redisPort: 6379  # Redis 端口，默认为 6379
+redisPassword: 123456  # Redis 密码，未设置密码则留空
+redisUsername:  # Redis 6.0+ ACL用户名（可选），如果Redis使用ACL且不是default用户，需要配置
+
+# SQLite配置（当 useStorage=sqlite 时生效）
+sqliteDbPath: logs/alerts.db  # SQLite 数据库路径，默认为 logs/alerts.db
+
+# 历史记录保留配置（仅当 useStorage=sqlite 时生效）
+historyRetention:
+  days: 30  # 保留天数，默认 30 天；设置为 0 表示不保留历史记录（删除所有已恢复的记录）
+  cleanupTime: "05:00"  # 清理时间（24小时制），默认 05:00（凌晨5点）
+  timezone: "Asia/Shanghai"  # 时区，默认 Asia/Shanghai
 
 # 日志配置
 logFileDir: logs  # 可选项，为空则默认为logs目录

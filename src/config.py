@@ -3,6 +3,7 @@
 """
 import os
 import yaml
+import logging
 
 
 class Config:
@@ -22,12 +23,39 @@ class Config:
             raise ValueError("配置文件为空或格式错误")
         
         # 读取配置项
+        # 企业微信配置
         self.qywechat_key = config_data.get("qywechatKey", "")
-        # webhook基础URL（可选，不配置则使用默认官方地址）
-        self.webhook_base_url = config_data.get("webhookBaseUrl", "https://qyapi.weixin.qq.com/cgi-bin/webhook/send")
+        self.qywechat_base_url = config_data.get("qywechatBaseUrl", "https://qyapi.weixin.qq.com/cgi-bin/webhook/send")
+        # 飞书配置
+        self.feishu_key = config_data.get("feishuKey", "")
+        self.feishu_base_url = config_data.get("feishuBaseUrl", "https://open.feishu.cn/open-apis/bot/v2/hook")
+        # 钉钉配置
+        self.dingtalk_key = config_data.get("dingtalkKey", "")
+        self.dingtalk_base_url = config_data.get("dingtalkBaseUrl", "https://oapi.dingtalk.com/robot/send")
+        
+        # 存储配置
+        use_storage = config_data.get("useStorage", "sqlite").lower()  # 默认使用 SQLite
+        if use_storage not in ["redis", "sqlite"]:
+            logger = logging.getLogger(__name__)
+            logger.warning(f"无效的存储类型: {use_storage}，自动设置为 'sqlite'")
+            use_storage = "sqlite"
+        self.use_storage = use_storage
+        
+        # Redis配置（当 useStorage=redis 时生效）
         self.redis_server = config_data.get("redisServer", "127.0.0.1")
         self.redis_port = config_data.get("redisPort", "6379")
         self.redis_password = config_data.get("redisPassword", "")
+        self.redis_username = config_data.get("redisUsername", "")  # Redis 6.0+ ACL支持
+        
+        # SQLite配置（当 useStorage=sqlite 时生效）
+        self.sqlite_db_path = config_data.get("sqliteDbPath", "logs/alerts.db")
+        
+        # 历史记录保留配置（仅当 useStorage=sqlite 时生效）
+        history_retention = config_data.get("historyRetention", {})
+        self.history_retention_days = history_retention.get("days", 30)
+        self.history_cleanup_time = history_retention.get("cleanupTime", "05:00")
+        self.history_timezone = history_retention.get("timezone", "Asia/Shanghai")
+        
         self.log_file_dir = config_data.get("logFileDir", "logs")
         self.log_file_path = config_data.get("logFilePath", "alertmanager-webhook.log")
         self.port = config_data.get("port", "9095")
