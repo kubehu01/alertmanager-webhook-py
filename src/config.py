@@ -34,11 +34,19 @@ class Config:
         self.dingtalk_base_url = config_data.get("dingtalkBaseUrl", "https://oapi.dingtalk.com/robot/send")
         
         # 存储配置
-        use_storage = config_data.get("useStorage", "sqlite").lower()  # 默认使用 SQLite
+        use_storage_raw = config_data.get("useStorage", "sqlite")
+        # 处理空值、None 或空字符串的情况
+        if not use_storage_raw or not isinstance(use_storage_raw, str) or not use_storage_raw.strip():
+            use_storage = "sqlite"
+        else:
+            use_storage = use_storage_raw.strip().lower()
+        
+        # 验证存储类型，如果不是 redis 或 sqlite，则使用 sqlite
         if use_storage not in ["redis", "sqlite"]:
             logger = logging.getLogger(__name__)
-            logger.warning(f"无效的存储类型: {use_storage}，自动设置为 'sqlite'")
+            logger.warning(f"无效的存储类型: '{use_storage_raw}'，自动设置为 'sqlite'")
             use_storage = "sqlite"
+        
         self.use_storage = use_storage
         
         # Redis配置（当 useStorage=redis 时生效）
@@ -72,4 +80,5 @@ class Config:
         log_dir = os.path.dirname(self.log_file_path)
         if log_dir and not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)
+
 
