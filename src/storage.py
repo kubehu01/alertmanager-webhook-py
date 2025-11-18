@@ -6,7 +6,7 @@ import sqlite3
 import threading
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 import logging
 
@@ -352,6 +352,9 @@ class RedisStorageBackend(StorageBackend):
 class SQLiteStorageBackend(StorageBackend):
     """SQLite 存储后端实现（方案二：多记录设计）"""
     
+    # 中国时区（CST，UTC+8）
+    CST = timezone(timedelta(hours=8))
+    
     def __init__(self, db_path: str):
         # 如果路径是相对路径，转换为绝对路径（基于当前工作目录）
         if not os.path.isabs(db_path):
@@ -361,6 +364,10 @@ class SQLiteStorageBackend(StorageBackend):
         self.conn = None
         self.lock = threading.Lock()  # 用于线程安全
         self._init_database()
+    
+    def _get_cst_timestamp(self) -> str:
+        """获取当前 CST 时区的时间戳字符串（格式：YYYY-MM-DD HH:MM:SS）"""
+        return datetime.now(self.CST).strftime('%Y-%m-%d %H:%M:%S')
     
     def _init_database(self):
         """初始化数据库和表结构"""
@@ -398,8 +405,8 @@ class SQLiteStorageBackend(StorageBackend):
                 send_error TEXT,
                 last_sent_at TIMESTAMP,
                 webhook_url TEXT,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL,
                 CHECK(status IN ('firing', 'resolved')),
                 CHECK(count > 0),
                 CHECK(platform IN ('qywechat', 'feishu', 'dingtalk') OR platform IS NULL),
@@ -500,20 +507,22 @@ class SQLiteStorageBackend(StorageBackend):
                 if row:
                     # 更新现有记录
                     new_count = row['count'] + 1
+                    current_time = self._get_cst_timestamp()
                     self.conn.execute(
-                        "UPDATE alerts SET count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (new_count, row['id'])
+                        "UPDATE alerts SET count = ?, updated_at = ? WHERE id = ?",
+                        (new_count, current_time, row['id'])
                     )
                     self.conn.commit()
                     return new_count
                 else:
                     # 创建新记录（首次触发）
+                    current_time = self._get_cst_timestamp()
                     self.conn.execute(
                         """
-                        INSERT INTO alerts (fingerprint, status, count, start_time, resolved_at)
-                        VALUES (?, 'firing', 1, ?, NULL)
+                        INSERT INTO alerts (fingerprint, status, count, start_time, resolved_at, created_at, updated_at)
+                        VALUES (?, 'firing', 1, ?, NULL, ?, ?)
                         """,
-                        (fingerprint, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                        (fingerprint, current_time, current_time, current_time)
                     )
                     self.conn.commit()
                     return 1
@@ -526,16 +535,19 @@ class SQLiteStorageBackend(StorageBackend):
         """设置开始时间（更新最新的 firing 记录）"""
         with self.lock:
             try:
-                self.conn.execute(
-                    """
-                    UPDATE alerts 
-                    SET start_time = ?, updated_at = CURRENT_TIMESTAMP 
-                    WHERE fingerprint = ? AND status = 'firing' 
-                    ORDER BY id DESC LIMIT 1
-                    """,
-                    (start_time, fingerprint)
+                current_time = self._get_cst_timestamp()
+                # 先找到最新的 firing 记录的 id
+                cursor = self.conn.execute(
+                    "SELECT id FROM alerts WHERE fingerprint = ? AND status = 'firing' ORDER BY id DESC LIMIT 1",
+                    (fingerprint,)
                 )
-                self.conn.commit()
+                row = cursor.fetchone()
+                if row:
+                    self.conn.execute(
+                        "UPDATE alerts SET start_time = ?, updated_at = ? WHERE id = ?",
+                        (start_time, current_time, row['id'])
+                    )
+                    self.conn.commit()
             except Exception as e:
                 logger.error(f"SQLite操作失败: {e}")
                 self.conn.rollback()
@@ -571,7 +583,9 @@ class SQLiteStorageBackend(StorageBackend):
                         params.append(severity)
                     
                     if updates:
-                        updates.append("updated_at = CURRENT_TIMESTAMP")
+                        current_time = self._get_cst_timestamp()
+                        updates.append("updated_at = ?")
+                        params.append(current_time)
                         params.append(row['id'])
                         
                         self.conn.execute(
@@ -645,25 +659,28 @@ class SQLiteStorageBackend(StorageBackend):
                 row = cursor.fetchone()
                 
                 if row:
+                    # 使用本地时区（CST）的时间戳
+                    current_time = self._get_cst_timestamp()
+                    
                     # 更新为 resolved 状态
                     if ends_at:
                         self.conn.execute(
                             """
                             UPDATE alerts 
-                            SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP, 
-                                ends_at = ?, updated_at = CURRENT_TIMESTAMP 
+                            SET status = 'resolved', resolved_at = ?, 
+                                ends_at = ?, updated_at = ? 
                             WHERE id = ?
                             """,
-                            (ends_at, row['id'])
+                            (current_time, ends_at, current_time, row['id'])
                         )
                     else:
                         self.conn.execute(
                             """
                             UPDATE alerts 
-                            SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+                            SET status = 'resolved', resolved_at = ?, updated_at = ? 
                             WHERE id = ?
                             """,
-                            (row['id'],)
+                            (current_time, current_time, row['id'])
                         )
                     self.conn.commit()
             except Exception as e:
@@ -698,12 +715,13 @@ class SQLiteStorageBackend(StorageBackend):
                     row = cursor.fetchone()
                     if row:
                         # 更新该记录
+                        current_time = self._get_cst_timestamp()
                         self.conn.execute("""
                             UPDATE alerts 
                             SET platform = ?, send_status = ?, send_error = ?, webhook_url = ?, 
-                                last_sent_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                                last_sent_at = ?, updated_at = ?
                             WHERE id = ?
-                        """, (platform, send_status_str, error_message, webhook_url, row['id']))
+                        """, (platform, send_status_str, error_message, webhook_url, current_time, current_time, row['id']))
                 else:
                     # 对于 resolved 状态，更新最新的记录（可能是 firing 或 resolved）
                     cursor = self.conn.execute("""
@@ -714,12 +732,13 @@ class SQLiteStorageBackend(StorageBackend):
                     row = cursor.fetchone()
                     if row:
                         # 更新该记录
+                        current_time = self._get_cst_timestamp()
                         self.conn.execute("""
                             UPDATE alerts 
                             SET platform = ?, send_status = ?, send_error = ?, webhook_url = ?,
-                                last_sent_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                                last_sent_at = ?, updated_at = ?
                             WHERE id = ?
-                        """, (platform, send_status_str, error_message, webhook_url, row['id']))
+                        """, (platform, send_status_str, error_message, webhook_url, current_time, current_time, row['id']))
                 
                 self.conn.commit()
             except Exception as e:
