@@ -191,7 +191,7 @@ class Transformer:
                                 alertname = alert.labels.get("alertname", "")
                                 summary = alert.annotations.get("summary", "")
                                 instance = alert.labels.get("instance", "")
-                                severity = alert.labels.get("serverity") or alert.labels.get("sereverity") or ""
+                                severity = alert.labels.get("serverity") or alert.labels.get("severity") or ""
                                 
                                 self.storage.set_alert_info(
                                     fingerprint,
