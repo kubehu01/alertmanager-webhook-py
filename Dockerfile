@@ -8,15 +8,14 @@ WORKDIR /app
 COPY requirements.txt .
 
 # 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ && \
+    RUN mkdir -p logs
 
 # 复制应用代码
 COPY src/ ./src/
 COPY template/ ./template/
 COPY config/ ./config/
 
-# 创建日志目录
-RUN mkdir -p logs
 
 # 暴露端口
 EXPOSE 9095
