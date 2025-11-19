@@ -76,7 +76,7 @@ class Transformer:
             # 返回默认模板
             default_template = """{% if alert.status == 'firing' %}
 **<font color="orange">告警主题: {{ alert.annotations.get('summary', '') }}</font>**
-告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '' }}
+告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '默认项目' }}
 告警级别: {{ alert.labels.get('serverity') or alert.labels.get('severity') or '' }}
 告警次数: {{ alert.count }}
 告警详情: {{ alert.annotations.get('description', '') }}
@@ -84,8 +84,8 @@ class Transformer:
 
 {% elif alert.status == 'resolved' %}
 **<font color="green">告警主题: {{ alert.annotations.get('summary', '') }}</font>**
-告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '' }}
-告警详情: {{ alert.annotations.get('description', '') }}
+告警项目: {{ alert.labels.get('project_name') or alert.labels.get('project') or '默认项目' }}
+告警详情: {{ alert.annotations.get('recover') or alert.annotations.get('description') or '' }}
 开始时间: {{ alert.startTime }}
 恢复时间: {{ alert.endTime }}
 {% endif %}"""
