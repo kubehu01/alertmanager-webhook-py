@@ -15,6 +15,7 @@ services:
       - ./config/config.yaml:/app/config/config.yaml:ro
       # 挂载日志目录
       - ./logs:/app/logs
+      - ./template:/app/template
       - /etc/localtime:/etc/localtime:ro
 
   # Redis 服务,如使用sqlite可以删除下面部分
