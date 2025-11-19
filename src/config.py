@@ -66,6 +66,14 @@ class Config:
         
         self.log_file_dir = config_data.get("logFileDir", "logs")
         self.log_file_path = config_data.get("logFilePath", "alertmanager-webhook.log")
+        # 日志级别配置，支持: DEBUG, INFO, WARNING, ERROR, CRITICAL，默认为 INFO
+        log_level_str = config_data.get("logLevel", "INFO").upper()
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        if log_level_str not in valid_levels:
+            logger = logging.getLogger(__name__)
+            logger.warning(f"无效的日志级别: '{log_level_str}'，使用默认值 'INFO'")
+            log_level_str = "INFO"
+        self.log_level = log_level_str
         self.port = config_data.get("port", "9095")
         self.host = config_data.get("host", "127.0.0.1")
         

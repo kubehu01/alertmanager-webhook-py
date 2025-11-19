@@ -2,6 +2,7 @@
 消息转换器：将Alertmanager通知转换为机器人消息格式（支持企业微信、飞书、钉钉）
 """
 import os
+import json
 import re
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple, Union
@@ -128,6 +129,9 @@ class Transformer:
             (firing_message, resolved_message): 触发告警消息和恢复告警消息
         """
         try:
+            # 记录接收到的通知数据（DEBUG 级别）
+            logger.debug(f"收到 Alertmanager 通知数据 (robot_type={robot_type}):\n{json.dumps(notification_data, ensure_ascii=False, indent=2)}")
+            
             # 解析通知数据
             notification = Notification(
                 version=notification_data.get("version", ""),
@@ -144,6 +148,11 @@ class Transformer:
             for alert_data in notification_data.get("alerts", []):
                 alert = self._parse_alert(alert_data)
                 notification.alerts.append(alert)
+                
+                # 记录每个告警的详细信息（DEBUG 级别）
+                logger.debug(f"解析告警: fingerprint={alert.fingerprint}, status={alert.status}, "
+                           f"startsAt={alert.startsAt}, endsAt={alert.endsAt}, "
+                           f"labels={alert.labels}, annotations={alert.annotations}")
             
             # 分离firing和resolved告警
             firing_alerts = [a for a in notification.alerts if a.status == "firing"]
@@ -191,7 +200,7 @@ class Transformer:
                                 alertname = alert.labels.get("alertname", "")
                                 summary = alert.annotations.get("summary", "")
                                 instance = alert.labels.get("instance", "")
-                                severity = alert.labels.get("serverity") or alert.labels.get("severity") or ""
+                                severity = alert.labels.get("serverity") or alert.labels.get("sereverity") or ""
                                 
                                 self.storage.set_alert_info(
                                     fingerprint,
@@ -327,4 +336,5 @@ class Transformer:
         except Exception as e:
             logger.error(f"消息转换失败: {e}", exc_info=True)
             return None, None
+
 

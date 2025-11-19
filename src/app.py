@@ -3,6 +3,7 @@ Alertmanager Webhook主程序
 """
 import os
 import sys
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, request, jsonify
@@ -28,8 +29,14 @@ dingtalk_sender = None  # 钉钉发送器（用于默认配置）
 # 日志配置标志（使用模块级变量，防止重复配置）
 _logging_setup_done = False
 
-def setup_logging(log_file_path: str):
-    """配置日志"""
+def setup_logging(log_file_path: str, log_level: str = "INFO"):
+    """
+    配置日志
+    
+    Args:
+        log_file_path: 日志文件路径
+        log_level: 日志级别，支持: DEBUG, INFO, WARNING, ERROR, CRITICAL，默认为 INFO
+    """
     global _logging_setup_done
     
     # 如果已经配置过，直接返回
@@ -60,6 +67,16 @@ def setup_logging(log_file_path: str):
         root_logger.removeHandler(handler)
     root_logger.handlers = []
     
+    # 将字符串日志级别转换为 logging 常量
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL
+    }
+    log_level_value = level_map.get(log_level.upper(), logging.INFO)
+    
     # 创建文件handler
     file_handler = RotatingFileHandler(
         abs_log_file_path,
@@ -67,14 +84,14 @@ def setup_logging(log_file_path: str):
         backupCount=5,
         encoding='utf-8'
     )
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(log_level_value)
     file_handler.setFormatter(log_format)
     
     # 只添加文件handler，不添加控制台handler，避免重复输出
     root_logger.addHandler(file_handler)
     
     # 配置根日志器
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(log_level_value)
     
     # 禁用传播，避免日志向上传播导致重复输出
     root_logger.propagate = False
@@ -105,6 +122,9 @@ def _handle_webhook_request(robot_type: str, sender_class, default_sender, robot
         notification_data = request.get_json()
         if not notification_data:
             return jsonify({"error": "请求数据为空"}), 400
+        
+        # 记录 Alertmanager 传入的原始数据（DEBUG 级别）
+        logging.debug(f"[{robot_name}] 收到 Alertmanager 原始数据:\n{json.dumps(notification_data, ensure_ascii=False, indent=2)}")
         
         # 从URL参数获取key
         url_key = request.args.get('key')
@@ -308,8 +328,9 @@ def main():
         sys.exit(1)
     
     # 设置日志
-    setup_logging(config.log_file_path)
+    setup_logging(config.log_file_path, config.log_level)
     logging.info("=" * 50)
+    logging.info(f"日志级别: {config.log_level}")
     logging.info("Alertmanager Webhook 启动")
     logging.info(f"配置文件: {args.config}")
     logging.info(f"监听地址: {config.host}:{config.port}")
