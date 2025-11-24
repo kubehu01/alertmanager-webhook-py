@@ -380,8 +380,8 @@ class SQLiteStorageBackend(StorageBackend):
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         
-        # 启用 WAL 模式（提升并发性能）
-        self.conn.execute("PRAGMA journal_mode = WAL")
+        # 使用 DELETE 模式（兼容 NFS 等网络文件系统）
+        self.conn.execute("PRAGMA journal_mode = DELETE")
         self.conn.execute("PRAGMA synchronous = NORMAL")
         self.conn.execute("PRAGMA cache_size = -64000")  # 64MB
         self.conn.execute("PRAGMA foreign_keys = ON")
