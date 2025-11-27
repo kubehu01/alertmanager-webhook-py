@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-webhook-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    # 企业微信机器人配置（可选）
+    # 配置企业微信的key，如不配置也可以在请求接口的时候通过 ?key=xxxx 来指定
+    qywechatKey:
+
+    # Webhook基础URL（可选）
+    qywechatBaseUrl: https://qyapi.weixin.qq.com/cgi-bin/webhook/send
+
+    # 飞书机器人配置（可选）
+    feishuKey:
+
+    # Webhook基础URL（可选）
+    feishuBaseUrl: https://open.feishu.cn/open-apis/bot/v2/hook
+
+    # 钉钉机器人配置（可选）
+    dingtalkKey:
+
+    # Webhook基础URL（可选）
+    dingtalkBaseUrl: https://oapi.dingtalk.com/robot/send
+
+    # 存储配置
+    useStorage:   # 存储类型，支持 "redis" 或 "sqlite"，默认为 "sqlite"
+
+    # Redis配置（当 useStorage=redis 时生效）
+    redisServer: 
+    redisPort: 6379
+    redisPassword: 
+    redisUsername:
+
+    # SQLite配置（当 useStorage=sqlite 时生效）
+    sqliteDbPath: logs/alerts.db
+
+    # 历史记录保留配置（仅当 useStorage=sqlite 时生效）
+    historyRetention:
+      days: 30
+      cleanupTime: "05:00"
+
+    # 日志配置
+    logFileDir: logs
+    logFilePath: alertmanager-webhook.log
+    logLevel: DEBUG
+
+    # 服务监听配置
+    port: 9095
+    host: 0.0.0.0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-webhook
+  namespace: monitoring
+  labels:
+    app: alertmanager-webhook
+spec:
+  replicas: 1  # 根据需求调整副本数,多副本情况下建议logs目录使用共享存储
+  selector:
+    matchLabels:
+      app: alertmanager-webhook
+  template:
+    metadata:
+      labels:
+        app: alertmanager-webhook
+    spec:
+      nodeName: jinjian-prd-k8s-ops-13-19
+      containers:
+      - name: alertmanager-webhook
+        image: reg.llschain.com/common/alertmanager-webhook:v1.1-6
+        ports:
+        - containerPort: 9095  # 容器内部端口，对应 expose
+        volumeMounts:
+          - name: config-volume
+            mountPath: /app/config/config.yaml
+            subPath: config.yaml  # 只挂载 config.yaml 文件，避免覆盖整个目录
+            readOnly: true
+          - name: logs-volume
+            mountPath: /app/logs
+          - name: template-volume
+            mountPath: /app/template
+          - name: localtime-volume
+            mountPath: /etc/localtime
+            readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health  
+            port: 9095
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9095
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+        - name: config-volume
+          configMap:
+            name: alertmanager-webhook-config  # 与上面创建的 ConfigMap 名称一致
+        - name: logs-volume
+          hostPath:
+            path: /opt/alertmanager-webhook/logs  # 节点上的实际目录
+            type: DirectoryOrCreate  # 不存在则自动创建
+        - name: template-volume
+          hostPath:
+            path: /opt/alertmanager-webhook/template  # 节点上的实际目录
+            type: DirectoryOrCreate
+        - name: localtime-volume
+          hostPath:
+            path: /etc/localtime
+            type: File
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-webhook
+  namespace: monitoring
+spec:
+  selector:
+    app: alertmanager-webhook
+  ports:
+  - port: 9095
+    targetPort: 9095
+  type: ClusterIP
+
